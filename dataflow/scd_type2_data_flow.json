@@ -1,0 +1,167 @@
+{
+    "name": "SCDType2DataFlow",
+    "properties": {
+        "type": "MappingDataFlow",
+        "typeProperties": {
+            "sources": [
+                {
+                    "name": "EmployeesSource",
+                    "dataset": {
+                        "referenceName": "employees_csv",
+                        "type": "DatasetReference"
+                    },
+                    "type": "DelimitedTextSource"
+                },
+                {
+                    "name": "DepartmentSource",
+                    "dataset": {
+                        "referenceName": "department_csv",
+                        "type": "DatasetReference"
+                    },
+                    "type": "DelimitedTextSource"
+                },
+                {
+                    "name": "CurrentDimension",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "type": "AzureSqlSource",
+                    "sourceRetryCount": 1,
+                    "sourceRetryWait": 5,
+                    "sqlReaderQuery": "SELECT * FROM EmployeeDimension WHERE IsCurrent = 1"
+                }
+            ],
+            "sinks": [
+                {
+                    "name": "InsertNewRows",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "type": "AzureSqlSink",
+                    "preCopyScript": "SET IDENTITY_INSERT EmployeeDimension ON;"
+                },
+                {
+                    "name": "ExpireOldRecords",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "type": "AzureSqlSink",
+                    "preCopyScript": "SET IDENTITY_INSERT EmployeeDimension ON;"
+                },
+                {
+                    "name": "InsertUpdatedRecords",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "type": "AzureSqlSink",
+                    "preCopyScript": "SET IDENTITY_INSERT EmployeeDimension ON;"
+                }
+            ],
+            "transformations": [
+                {
+                    "name": "JoinDepartment",
+                    "type": "Join",
+                    "condition": "EmployeesSource.DepartmentID == DepartmentSource.DepartmentID",
+                    "joinType": "Inner",
+                    "left": "EmployeesSource",
+                    "right": "DepartmentSource"
+                },
+                {
+                    "name": "CompareJoin",
+                    "type": "Join",
+                    "condition": "JoinDepartment.EmployeeID == CurrentDimension.EmployeeID",
+                    "joinType": "FullOuter",
+                    "left": "JoinDepartment",
+                    "right": "CurrentDimension"
+                },
+                {
+                    "name": "DetectChanges",
+                    "type": "ConditionalSplit",
+                    "conditions": [
+                        {
+                            "name": "NewRows",
+                            "condition": "isNull(CurrentDimension.EmployeeID)"
+                        },
+                        {
+                            "name": "ChangedRows",
+                            "condition": "!isNull(CurrentDimension.EmployeeID) && (JoinDepartment.Name != CurrentDimension.Name || JoinDepartment.DepartmentID != CurrentDimension.DepartmentID)"
+                        },
+                        {
+                            "name": "UnchangedRows",
+                            "condition": "!isNull(CurrentDimension.EmployeeID) && JoinDepartment.Name == CurrentDimension.Name && JoinDepartment.DepartmentID == CurrentDimension.DepartmentID"
+                        }
+                    ]
+                },
+                {
+                    "name": "InsertNewRows",
+                    "type": "Sink",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "preCopyScript": "SET IDENTITY_INSERT EmployeeDimension ON;",
+                    "derivedColumns": [
+                        {
+                            "name": "EffectiveDate",
+                            "expression": "currentUTC()"
+                        },
+                        {
+                            "name": "ExpiryDate",
+                            "expression": "null"
+                        },
+                        {
+                            "name": "IsCurrent",
+                            "expression": "true"
+                        }
+                    ]
+                },
+                {
+                    "name": "ExpireOldRecords",
+                    "type": "Sink",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "preCopyScript": "SET IDENTITY_INSERT EmployeeDimension ON;",
+                    "updateColumns": [
+                        {
+                            "name": "IsCurrent",
+                            "expression": "false"
+                        },
+                        {
+                            "name": "ExpiryDate",
+                            "expression": "currentUTC()"
+                        }
+                    ]
+                },
+                {
+                    "name": "InsertUpdatedRecords",
+                    "type": "Sink",
+                    "dataset": {
+                        "referenceName": "sql_dimension",
+                        "type": "DatasetReference"
+                    },
+                    "preCopyScript": "SET IDENTITY_INSERT EmployeeDimension ON;",
+                    "derivedColumns": [
+                        {
+                            "name": "EffectiveDate",
+                            "expression": "currentUTC()"
+                        },
+                        {
+                            "name": "ExpiryDate",
+                            "expression": "null"
+                        },
+                        {
+                            "name": "IsCurrent",
+                            "expression": "true"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
