@@ -1,0 +1,42 @@
+{
+	"name": "Order",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "OrderLs",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "Order.csv",
+				"folderPath": "Mapping_input",
+				"container": "mappingdataflows"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "CUSTOMER_ID",
+				"type": "String"
+			},
+			{
+				"name": "ORDER_ID",
+				"type": "String"
+			},
+			{
+				"name": "AMOUNT",
+				"type": "String"
+			},
+			{
+				"name": "ORDER_DATE",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,35 @@
+{
+	"name": "SCDdb",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Sql_Ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Name",
+				"type": "varchar"
+			},
+			{
+				"name": "Address",
+				"type": "varchar"
+			},
+			{
+				"name": "Phone",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "SCD1"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

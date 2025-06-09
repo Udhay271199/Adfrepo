@@ -1,0 +1,116 @@
+{
+	"name": "Scd1_Dataflow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CurrentData",
+						"type": "DatasetReference"
+					},
+					"name": "CurrentData"
+				},
+				{
+					"dataset": {
+						"referenceName": "NewData",
+						"type": "DatasetReference"
+					},
+					"name": "NewData"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SCDdb",
+						"type": "DatasetReference"
+					},
+					"name": "SqlDb"
+				}
+			],
+			"transformations": [
+				{
+					"name": "fullJoin"
+				},
+				{
+					"name": "derivedColumn"
+				},
+				{
+					"name": "RenamingCols"
+				},
+				{
+					"name": "RemovingCols"
+				},
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ID as integer,",
+				"          Name as string,",
+				"          Address as string,",
+				"          Phone as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> CurrentData",
+				"source(output(",
+				"          ID as integer,",
+				"          Name as string,",
+				"          Address as string,",
+				"          Phone as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> NewData",
+				"CurrentData, NewData join(CurrentData@ID == NewData@ID,",
+				"     joinType:'outer',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> fullJoin",
+				"RenamingCols derive(ID = coalesce(Current_ID,New_ID),",
+				"          Name = coalesce(Current_Name,New_Name),",
+				"          Address = coalesce(Current_Address,New_Address),",
+				"          Phone = coalesce(Current_Phone,New_Phone)) ~> derivedColumn",
+				"fullJoin select(mapColumn(",
+				"          Current_ID = CurrentData@ID,",
+				"          New_ID = NewData@ID,",
+				"          Current_Name = CurrentData@Name,",
+				"          New_Name = NewData@Name,",
+				"          Current_Address = CurrentData@Address,",
+				"          New_Address = NewData@Address,",
+				"          Current_Phone = CurrentData@Phone,",
+				"          New_Phone = NewData@Phone",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RenamingCols",
+				"derivedColumn select(mapColumn(",
+				"          ID,",
+				"          Name,",
+				"          Address,",
+				"          Phone",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RemovingCols",
+				"RemovingCols alterRow(upsertIf(true())) ~> alterRow1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ID as integer,",
+				"          Name as string,",
+				"          Address as string,",
+				"          Phone as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> SqlDb"
+			]
+		}
+	}
+}

@@ -1,0 +1,9 @@
+{
+	"name": "datafactory-copy-udhay",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "ee48f457-9f42-4790-99a2-2c4a222749f7",
+		"tenantId": "76a2ae5a-9f00-4f6b-95ed-5d33d77c4d61"
+	}
+}

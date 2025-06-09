@@ -1,0 +1,17 @@
+{
+	"name": "DestinationDataset_egc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Sql_db_Ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "samplecsv"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

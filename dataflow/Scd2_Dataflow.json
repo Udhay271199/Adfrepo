@@ -1,0 +1,181 @@
+{
+	"name": "Scd2_Dataflow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Employees",
+						"type": "DatasetReference"
+					},
+					"name": "Employees"
+				},
+				{
+					"dataset": {
+						"referenceName": "DepartmentSCD",
+						"type": "DatasetReference"
+					},
+					"name": "Department"
+				},
+				{
+					"dataset": {
+						"referenceName": "SCD2Target",
+						"type": "DatasetReference"
+					},
+					"name": "TargetTable"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SCD2Target",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "SCD2Target",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "join"
+				},
+				{
+					"name": "select"
+				},
+				{
+					"name": "SourceHASH"
+				},
+				{
+					"name": "ExistingData"
+				},
+				{
+					"name": "ActiveRecords"
+				},
+				{
+					"name": "TargetHASH"
+				},
+				{
+					"name": "exists1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "alterRow1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "alterRow2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EmployeeID as integer,",
+				"          Name as string,",
+				"          DepartmentID as integer,",
+				"          StartDate as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Employees",
+				"source(output(",
+				"          DepartmentID as integer,",
+				"          DepartmentName as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Department",
+				"source(output(",
+				"          EmployeeID as integer,",
+				"          Name as string,",
+				"          DepartmentID as integer,",
+				"          DepartmentName as string,",
+				"          StartDate as date,",
+				"          EndDate as date,",
+				"          ActiveFlag as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> TargetTable",
+				"Employees, Department join(Employees@DepartmentID == Department@DepartmentID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join",
+				"join select(mapColumn(",
+				"          EmployeeID,",
+				"          Name,",
+				"          DepartmentID = Employees@DepartmentID,",
+				"          DepartmentName,",
+				"          StartDate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select",
+				"select derive(SourceHash = md5(EmployeeID,Name,DepartmentName)) ~> SourceHASH",
+				"SourceHASH, TargetHASH exists(SourceHash == TargetHASH,",
+				"     negate:true,",
+				"     broadcast: 'left')~> ExistingData",
+				"TargetTable filter(ActiveFlag==1) ~> ActiveRecords",
+				"ActiveRecords derive(TargetHASH = md5(EmployeeID,Name,DepartmentName)) ~> TargetHASH",
+				"TargetHASH, SourceHASH exists(TargetTable@EmployeeID==select@EmployeeID&&TargetTable@Name==select@Name,",
+				"     negate:false,",
+				"     broadcast: 'left')~> exists1",
+				"ExistingData derive(EndDate = toDate('2099-12-31'),",
+				"          ActiveFlag = 1) ~> derivedColumn1",
+				"derivedColumn1 alterRow(upsertIf(true())) ~> alterRow1",
+				"exists1 derive(EndDate = toDate(currentUTC()),",
+				"          ActiveFlag = 0) ~> derivedColumn2",
+				"derivedColumn2 alterRow(updateIf(true())) ~> alterRow2",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          EmployeeID as integer,",
+				"          Name as string,",
+				"          DepartmentID as integer,",
+				"          DepartmentName as string,",
+				"          StartDate as date,",
+				"          EndDate as date,",
+				"          ActiveFlag as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['EmployeeID','Name','DepartmentName'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1",
+				"alterRow2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          EmployeeID as integer,",
+				"          Name as string,",
+				"          DepartmentID as integer,",
+				"          DepartmentName as string,",
+				"          StartDate as date,",
+				"          EndDate as date,",
+				"          ActiveFlag as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
+			]
+		}
+	}
+}

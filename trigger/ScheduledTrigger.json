@@ -1,0 +1,24 @@
+{
+	"name": "ScheduledTrigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "SCD2_pipeline",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Minute",
+				"interval": 1,
+				"startTime": "2025-06-08T14:58:00",
+				"timeZone": "India Standard Time"
+			}
+		}
+	}
+}

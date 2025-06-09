@@ -1,0 +1,49 @@
+{
+	"name": "SCD2Target",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ScdDb_Ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "EmployeeID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Name",
+				"type": "varchar"
+			},
+			{
+				"name": "DepartmentID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DepartmentName",
+				"type": "varchar"
+			},
+			{
+				"name": "StartDate",
+				"type": "date"
+			},
+			{
+				"name": "EndDate",
+				"type": "date"
+			},
+			{
+				"name": "ActiveFlag",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "scd2"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
